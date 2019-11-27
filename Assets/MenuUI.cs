@@ -8,6 +8,7 @@ public class MenuUI : MonoBehaviour
 {
 
     public static bool created = false;
+    public AudioSource source;
 
     void Awake()
     {
@@ -27,7 +28,7 @@ public class MenuUI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        source.Play();
     }
 
     public void Exit()

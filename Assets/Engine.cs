@@ -72,6 +72,7 @@ public class Engine : MonoBehaviour
         }
     }
 
+    public AudioSource source;
 
     //Gdy wystąpi kolizja obiektów
     public void OnCollisionEnter2D(Collision2D col)
@@ -81,6 +82,7 @@ public class Engine : MonoBehaviour
         {
             direction.y = (-direction.y);
             point++;
+            source.Play();
             Faster();
             SetBonus();
         }

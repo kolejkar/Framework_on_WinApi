@@ -1,0 +1,131 @@
+#include "Window.hpp"
+
+// Standards library for windows
+#include <windows.h>
+#include <vector>
+
+using namespace std; //for vector
+
+//classes library
+#include "Evnent.hpp"
+
+Window::Window() //konstruktor
+{
+	Wsk=NULL;
+	strcpy(NK,"Object_Window");
+	WNDCLASSEX wc;
+	wc.cbSize=sizeof(WNDCLASSEX);
+	wc.style=0;
+	wc.lpfnWndProc=WndProc;
+	wc.cbClsExtra=0;
+	wc.cbWndExtra=0;
+	wc.hInstance=GetModuleHandle(NULL);
+	wc.hIcon=LoadIcon(NULL,IDI_APPLICATION);
+	wc.hCursor=LoadCursor(NULL,IDC_ARROW);
+	wc.hbrBackground=(HBRUSH)(COLOR_BTNFACE+1);
+	wc.lpszMenuName=0;
+	wc.lpszClassName=NK;
+	wc.hIconSm=LoadIcon(NULL,IDI_APPLICATION);
+	if (!RegisterClassEx(&wc))
+	{
+		MessageBox(0,"B³¹d rejestracji klasy okna!",0,MB_ICONERROR);
+		ExitProcess(0);
+	}
+	Name = "Okno";
+	x = CW_USEDEFAULT;
+	y = CW_USEDEFAULT;
+	h = CW_USEDEFAULT;
+	w = CW_USEDEFAULT;
+	Handle=CreateWindowEx(0,NK,Name,WS_OVERLAPPEDWINDOW,x,y,w,h,0,0,GetModuleHandle(NULL),this);
+	if (Handle==0)
+	{
+	 	MessageBox(0,"B³¹d tworzenia okna!",0,MB_ICONERROR);
+	}
+	HFONT hNF=(HFONT)GetStockObject(DEFAULT_GUI_FONT);
+	Evnent ev;
+	ev.Message=WM_SETFONT;
+	ev.Param1=(int)hNF;
+	ev.SendEvnent(Handle);
+}
+
+Window::~Window() //dekonstruktor
+{
+	for (int i=0;i<(int)tab.size();i++)
+	{
+		Wsk=tab[i];
+		delete Wsk->Msg;
+		delete Wsk;
+	}
+	tab.clear();
+}
+
+LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) //procedura okna z winapi
+{
+	Window *obj=NULL; //wskaŸnik
+	if (Message==WM_NCCREATE)
+	{
+		CREATESTRUCT *cs;
+		cs=(CREATESTRUCT *)lParam;
+		obj=(Window *)cs->lpCreateParams;
+		SetLastError(0);
+		if (!SetWindowLongPtr(hwnd,GWLP_USERDATA,(int)obj))
+		{
+			if (GetLastError()!=0)
+			{
+				MessageBox(0,"Memory error!",0,MB_ICONERROR);
+				return FALSE;
+			}
+		}
+	}
+	else
+	{
+		obj=(Window*)GetWindowLongPtr(hwnd,GWLP_USERDATA);
+	}
+	if (obj!=NULL)
+	{
+		for (int i=0;i<(int)obj->tab.size();i++) 
+		{
+			if (obj->tab[i]->Msg->Message==Message)
+			{
+				obj->tab[i]->Msg->Message=Message;
+				obj->tab[i]->Msg->Param1=wParam;
+				obj->tab[i]->Msg->Param2=lParam;
+				(obj->tab[i]->Klasa->*obj->tab[i]->Metoda)(obj->tab[i]->Msg);
+			}
+		}
+	}
+	if (Message==WM_DESTROY)
+		PostQuitMessage(0);
+	return DefWindowProc(hwnd,Message,wParam,lParam);
+}
+
+//don't use with message CREATE or NCCREATE!!!
+bool Window::Add(Window* Sender,int Message,Func Metod) //dodane metody do obs³ugi zdarzenia
+{
+	if (Message!=WM_CREATE && Message!=WM_NCCREATE)
+	{
+		Wsk=new Metody;
+		Wsk->Klasa=Sender;
+		Wsk->Metoda=Metod;
+		Wsk->Msg=new Evnent;
+		Wsk->Msg->Message=Message;
+		tab.push_back(Wsk);
+	}
+	else
+	{
+		MessageBox(0,"Don't use Add Method with message WN_CREATE or WM_NCCREATE!!!",0,MB_ICONERROR);
+		return false;
+	}
+	return true;
+}
+
+void Window::Show() //pokazywanie okna
+{
+	Visible(SW_SHOW);
+	UpdateWindow(Handle);
+}
+
+void Window::CloseWin()
+{
+	DestroyWindow(Handle);
+}

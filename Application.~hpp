@@ -1,0 +1,79 @@
+#ifndef _APP_HPP_
+#define _APP_HPP_
+
+//Defaults library
+#include "Control.hpp"
+
+// Standards library for windows
+#include <iostream>
+#include <Windows.h>
+#include <shellapi.h>
+using namespace std;
+
+class App
+{
+	public:
+		HINSTANCE HInstance;
+		string title;
+		App()
+		{
+			if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+				freopen("CONIN$", "r", stdin);
+				freopen("CONOUT$", "w", stdout);
+				freopen("CONOUT$", "w", stderr);
+			}
+				value = __argv;
+				count = __argc;
+				HInstance = GetModuleHandle(value[0]);
+			//value=CommandLineToArgvW(GetCommandLine(),&count);
+				
+		};
+		App(int argc,char **argv)
+		{
+			value=argv;
+			count=argc;
+			HInstance = GetModuleHandle(value[0]);
+			//ustalanie tytu³u aplikacji
+			char *t = *argv;
+			char *dot =(char*)strrchr(t, 46);
+			char *uk = (char*)strrchr(t, '\\');
+			t = uk+1;
+			int pos = dot - t;
+			t[pos] = 0;
+			title = t;
+		};
+		char *ParamStr(int index)
+		{
+			return value[index];
+		};
+		int Return() 
+		{ 
+			while(GetMessage(&Msg,NULL,0,0))
+			{
+				TranslateMessage(&Msg);
+				DispatchMessage(&Msg);
+			}
+			LocalFree(value);
+			return Msg.wParam;			
+		};
+		void Exit(int code)
+		{
+			exitcode=code;
+		};
+		void Exit() 
+		{
+			PostQuitMessage(0);			
+			exitcode=0;
+		};
+		int Message(Control *control, string message, int flags)
+		{
+			return MessageBoxA(control->Handle, message.c_str(), title.c_str(), flags);
+		}
+	private:
+		char** value;
+		int count; 
+		int exitcode;
+		MSG Msg;
+};
+
+#endif /* _APP_HPP_ */
